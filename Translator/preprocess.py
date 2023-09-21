@@ -6,6 +6,8 @@ import json
 # with open("/Users/ndjebayidamarisstephanie/Projects/LLM-Project/Data_Translated/med-chat-builder/Trans_GenMedGPT-5k.json") as f:
 #     json_data = json.load(f)
 
+
+
 # Converting JSON data to a pandas DataFrame
 df = pd.read_json("/Users/ndjebayidamarisstephanie/Projects/LLM-Project/Data_Translated/med-chat-builder/Trans_GenMedGPT-5k.json", orient='records')
 
