@@ -1,77 +1,57 @@
-from flask import Flask, request, jsonify, send_file, render_template, redirect, url_for, send_from_directory
-from PyPDF2 import PdfFileReader, PdfFileWriter
-from googletrans import Translator
-from werkzeug.utils import secure_filename
+from io import BytesIO
 import os
+from flask import Flask, render_template, request, send_file
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
+from Translator-API/src/utils.py import translate_pdf
 
-app = Flask(__name__, static_url_path="/static")
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 
-# Configuration
+class Upload(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	filename = db.Column(db.String(50))
+	data = db.Column(db.LargeBinary)
+	
+class Translated(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	main_file = db.ForeignKey('Upload')
+	filename = db.Column(db.String(50))
+	data = db.Column(db.LargeBinary)
 
-app.config['UPLOAD_FOLDER'] = os.path.dirname(os.path.abspath(__file__)) + '/uploads/'
-app.config['TRANSLATED_FOLDER'] = os.path.dirname(os.path.abspath(__file__)) + '/translated/'
 
-translator = Translator()
-
-def translate_pdf(input_path, output_path, target_language='en'):
-    try:
-        input_file = PdfFileReader(open(input_path, 'rb'))
-        output = PdfFileWriter()
-
-        translated_content = ""
-
-        for page_number in range(input_file.getNumPages()):
-            page = input_file.getPage(page_number)
-            text = page.extractText()
-            translated_text = translator.translate(text, dest=target_language)
-            translated_content += translated_text.text
-
-            translated_page_writer = open(output_path, 'ab')
-            translated_page_writer.write(translated_text.text.encode('utf-8'))
-            translated_page_writer.close()
-
-        return True, translated_content
-    except Exception as e:
-        print(f"Translation failed: {str(e)}")
-        return False, None
 
 @app.route('/', methods=['GET', 'POST'])
-def upload_file():
-    
-    if request == 'POST':
-        print("papapapppa")
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file part'})
-        
-        file = request.files['file']
-
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'})
-
-        if file:
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-            translated_filename = f"translated_{filename}"
-            translated_output_path = os.path.join(app.config['TRANSLATED_FOLDER'], translated_filename)
-            input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
-            success, translated_content = translate_pdf(input_path, translated_output_path, target_language='fr')
-
-            if success:
-                return redirect(url_for('uploaded_file', filename=filename))
-            #jsonify({'success': 'File uploaded and translated successfully', 'translated_content': translated_content})
-            else:
-                return jsonify({'error': 'Translation failed'})
-            
-    return render_template('index.html')
+def index():
+	if request.method == 'POST':
+		file = request.files['file']
+		
+        translated_file = translate_pdf(file, target_language='fr')
+        tranlated = Translated(filename=f"translated_{file.filename}", data=translated_file.read())
 
 
-@app.route('/translated/', methods=['GET'])
-def download_file(filename):
-    return send_from_directory(os.path.join(app.config['TRANSLATED_FOLDER'], filename), as_attachment=True)
+		upload = Upload(filename=file.filename, data=file.read())
+		
+        db.session.add(tranlated)
+		db.session.add(upload)
+		db.session.commit()
+		return f'Uploaded: {file.filename} and the translated version has been saved.'
+	return render_template('index.html')
 
-if __name__ == "__main__":
+
+@app.route('/download/<translated_id>')
+def download(translated_id):
+	translated = Translated.query.filter_by(id=translated_id).first()
+	return send_file(BytesIO(translated.data), download_name=translated.filename, as_attachment=True )
+
+
+
+if __name__ == '__main__':
+	
     port = int(os.environ.get("PORT", 1000))
     app.run(host='0.0.0.0', port=port)
+	
