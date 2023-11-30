@@ -10,6 +10,32 @@ translator = GoogleTranslator(source='auto', target='fr')
 
 
 
+translator = Translator()
+
+def translate_pdf(input_path, output_path, target_language='en'):
+    try:
+        input_file = PdfFileReader(open(input_path, 'rb'))
+        output = PdfFileWriter()
+
+        translated_content = ""
+
+        for page_number in range(input_file.getNumPages()):
+            page = input_file.getPage(page_number)
+            text = page.extractText()
+            translated_text = translator.translate(text, dest=target_language)
+            translated_content += translated_text.text
+
+            translated_page_writer = open(output_path, 'ab')
+            translated_page_writer.write(translated_text.text.encode('utf-8'))
+            translated_page_writer.close()
+
+        return True, translated_content
+    except Exception as e:
+        print(f"Translation failed: {str(e)}")
+        return False, None
+
+
+
 def compute_token(conversation):
     
     x = nltk.tokenize.sent_tokenize(conversation)
