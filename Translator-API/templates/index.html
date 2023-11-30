@@ -1,18 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Watermark Remover</title>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>File Upload Example</title>
+	<style>
+	.ok{
+		
+		font-size: 20px;
+	}
+	.op{
+		font-size: 20px;
+		margin-left: -70px;
+		font-weight: bold;
+		background-color: yellow;
+		border-radius: 5px;
+		cursor: pointer;
+	}
+		
+	
+	</style>
 </head>
 <body>
-<div align="center">
-    <h1>Cam-Scanner Watermark Remover</h1>
-    <h2>Upload new File</h2>
-    <form method=post enctype=multipart/form-data>
-        <p><input type=file name=file>
-            <input type=submit value=Upload>
-        </p>
-    </form>
-</div>
+	<div class="center">
+		<h1> Uploading and Returning Files With a Database in Flask </h1>
+		<form method="POST" action="/" enctype="multipart/form-data">
+			<input class="ok" type="file" name="file">
+			<button class="op">Submit</button>
+		</form>
+	</div>
+	
 </body>
 </html>
